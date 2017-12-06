@@ -20,10 +20,12 @@ public class CameraSurfaceRenderer extends CameraCaptureSession.StateCallback im
     private final Surface surface;
     private HandlerThread thread;
     private Handler handler;
+    private CameraCaptureSession session;
 
     @Override
     public void onConfigured(@NonNull CameraCaptureSession session) {
         try {
+            this.session = session;
             CameraDevice device = camera.getDevice();
             CaptureRequest.Builder req = device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             req.addTarget(surface);
@@ -62,6 +64,9 @@ public class CameraSurfaceRenderer extends CameraCaptureSession.StateCallback im
                 Log.wtf(TAG, "Interrupted while waiting for thread to die.", ex);
             }
             thread = null;
+        }
+        if (session != null) {
+            session.close();
         }
     }
 

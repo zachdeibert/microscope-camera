@@ -4,22 +4,59 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.media.Image;
+import android.media.ImageReader;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.util.Size;
 import android.view.Surface;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CameraWrapper extends CameraDevice.StateCallback {
     private static final String TAG = "CameraWrapper";
     private final Activity activity;
-    private final CameraManager manager;
+    public final CameraManager manager;
     private final List<CameraSurfaceRenderer> renderers;
     private CameraDevice device;
+
+    public void takePicture(int format, final IPhotoCallback callback) {
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(device.getId());
+            int width = 480;
+            int height = 640;
+            if (characteristics != null) {
+                Size[] sizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(format);
+                if (sizes != null && sizes.length > 0) {
+                    width = sizes[0].getWidth();
+                    height = sizes[0].getHeight();
+                }
+            }
+            ImageReader reader = ImageReader.newInstance(width, height, format, 1);
+            final CameraSurfaceRenderer renderer = createSurfaceRenderer(reader.getSurface(), false);
+            reader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader reader) {
+                    Image image = reader.acquireLatestImage();
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] data = new byte[buffer.capacity()];
+                    buffer.get(data);
+                    callback.photoTaken(data);
+                    image.close();
+                    renderer.close();
+                }
+            }, null);
+            renderer.startRendering();
+        } catch (CameraAccessException ex) {
+            Log.e(TAG, "Unable to access camera.", ex);
+        }
+    }
 
     public boolean hasDevice() {
         return device != null;
@@ -29,12 +66,16 @@ public class CameraWrapper extends CameraDevice.StateCallback {
         return device;
     }
 
-    public CameraSurfaceRenderer createSurfaceRenderer(Surface surface) {
+    private CameraSurfaceRenderer createSurfaceRenderer(Surface surface, boolean autoStart) {
         CameraSurfaceRenderer renderer = new CameraSurfaceRenderer(this, surface);
-        if (hasDevice()) {
+        if (autoStart && hasDevice()) {
             renderer.startRendering();
         }
         return renderer;
+    }
+
+    public CameraSurfaceRenderer createSurfaceRenderer(Surface surface) {
+        return createSurfaceRenderer(surface, true);
     }
 
     @Override
