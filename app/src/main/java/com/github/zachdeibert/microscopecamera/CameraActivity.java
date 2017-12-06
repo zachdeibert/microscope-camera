@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 
 public class CameraActivity extends AppCompatActivity implements SurfaceHolder.Callback {
     private static final int CAMERA_REQUEST_CODE = 1;
@@ -46,6 +47,11 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         }
     }
 
+    private void enterImmersiveMode() {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,5 +60,12 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         camera.tryLoadCamera(CAMERA_REQUEST_CODE);
         SurfaceView view = (SurfaceView) findViewById(R.id.camera_preview);
         view.getHolder().addCallback(this);
+        enterImmersiveMode();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        enterImmersiveMode();
     }
 }
