@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -30,6 +31,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     private boolean isStreaming;
     private boolean isVideoing;
     private File saveDirectory;
+    private View ui;
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -95,12 +97,24 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
             }
         }
         Log.d(TAG, String.format("Saving files to %s.", saveDirectory));
+        ui = findViewById(R.id.ui);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         enterImmersiveMode();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        boolean res = super.onTouchEvent(event);
+        ui.setVisibility(View.VISIBLE);
+        return res;
+    }
+
+    public void hideUI(View v) {
+        ui.setVisibility(View.INVISIBLE);
     }
 
     public void toggleStream(View v) {
